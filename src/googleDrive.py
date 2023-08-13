@@ -31,7 +31,7 @@ class googleDrive:
         try:
             service = build('drive', 'v3', credentials=self.creds)
             results = service.files().list(
-                pageSize=1000, 
+                pageSize=100, 
                 fields="nextPageToken, files(id, name, mimeType)").execute()
             items = results.get('files', [])
             if not items:
@@ -49,6 +49,31 @@ class googleDrive:
         except HttpError as error:
             # TODO(developer) - Handle errors from drive API.
             print(f'An error occurred: {error}')
+    def get_folder(self,id):
+        try:
+            service = build('drive', 'v3', credentials=self.creds)
+            results = service.files().list(
+                q=f"'{id}' in parents",  # Add this line to filter by parent folder ID
+                pageSize=100,
+                fields="nextPageToken, files(id, name, mimeType)"
+            ).execute()
+
+            items = results.get('files', [])
+            if not items:
+                print('No files or folders found.')
+            else:
+                print('Files and folders:')
+                for item in items:
+                    name = item.get('name', 'Unknown')
+                    item_type = item.get('mimeType', 'Unknown')
+                    if item_type == 'application/vnd.google-apps.folder':
+                        print(f'Folder: {name}')
+                    else:
+                        print(f'File: {name}')
+            return items
+        except HttpError as error:
+            print("ee")
+        
     def get_about_info(self):
         drive_service = build('drive', 'v3', credentials=self.creds)
         about_info = drive_service.about().get(fields="user,storageQuota").execute()
