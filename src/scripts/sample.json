@@ -1,0 +1,16 @@
+{
+    "items": [
+        {
+            "id": "1ydqDpikc8ZMLV-cxOAK6t_5YP4NobZNh",
+            "name": "components.zip"
+        }
+    ],
+    "scriptPath": [
+        "./backup/output.json"
+    ],
+    "path": [
+        "./backup/"
+    ],
+    "nameExten": "backup",
+    "backupPeriod": "2400"
+}

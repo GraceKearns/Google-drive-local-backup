@@ -1,8 +1,10 @@
 import io
+import json
 import tkinter as tk
 import customtkinter
 from PIL import Image
 from googleDrive import googleDrive 
+from framedata import framedata
 import threading
 import urllib.request
 class Application:
@@ -118,11 +120,13 @@ class Application:
             self.createLabel(self.frameCollection[0],font=('TkDefaultFont',20),wraplength=1000,text=f"You're currently signed in with {self.driveInfo['user']['emailAddress']}",side=tk.TOP,padx=10,pady=0,anchor=tk.NW)
             self.createFrame(window=self.windowCollection[0],expand=True,fill=tk.BOTH,border_width=2,side=tk.TOP,padx=10,pady=10,anchor=tk.N)
             self.createLabel(self.frameCollection[1],font=('TkDefaultFont',18),wraplength=1000,text=f"Confirm items to backup",side=tk.TOP,padx=10,pady=0,anchor=tk.NW)
-            self.createScrollFrame(window=self.frameCollection[1],expand=True,fill=tk.BOTH,border_width=2,side=tk.BOTTOM,padx=10,pady=5,anchor=tk.N)
-            self.createLabel(self.scrollFrameCollection[0],font=('TkDefaultFont',18),wraplength=1000,text=f"Confirm items to backup",side=tk.TOP,padx=10,pady=0,anchor=tk.NW)
-            self.createFrame(window=self.windowCollection[0],fill=tk.BOTH,border_width=2,side=tk.TOP,padx=10,pady=10,anchor=tk.S)
+            self.createScrollFrame(window=self.frameCollection[1],expand=True,fill=tk.BOTH,border_width=2,side=tk.LEFT,padx=10,pady=5,anchor=tk.W)
+            for x in self.selectedFrames:
+                self.createLabel(self.scrollFrameCollection[0],font=('TkDefaultFont',18),wraplength=1000,text=f"{x['name']}",side=tk.TOP,padx=10,pady=0,anchor=tk.NW)
+
+            self.createFrame(window=self.windowCollection[0],fill=tk.BOTH,border_width=2,side=tk.BOTTOM,padx=10,pady=10,anchor=tk.S)
             self.createButton(window=self.frameCollection[2],fg_color="white",text_color="black",hover_color="#F5ECEB",text="Back",side=tk.LEFT,padx=10,pady=10,anchor=tk.W,corner_radius=30)
-            self.createButton(window=self.frameCollection[2],fg_color="white",text_color="black",hover_color="#F5ECEB",text="Create Script",side=tk.RIGHT,padx=10,pady=10,anchor=tk.E,command=lambda:self.populateWindow(windowName="confirmation"),corner_radius=30)
+            self.createButton(window=self.frameCollection[2],fg_color="white",text_color="black",hover_color="#F5ECEB",text="Create Script",side=tk.RIGHT,padx=10,pady=10,anchor=tk.E,command=self.createScript,corner_radius=30)
             
     def clearAll(self):
         self.labelCollection.clear()
@@ -145,6 +149,7 @@ class Application:
         row_frame = customtkinter.CTkFrame(master=self.frame, height=100,border_width=0)
         row_frame.pack(side=tk.TOP, fill=tk.X, padx=0, pady=0, anchor=tk.W)
         frame_data_mapping = {}
+        frame_dataName_mapping = {}
             
         for i, item in enumerate(self.driveItems):
             if item['id'] in self.selectedFrames:
@@ -156,7 +161,12 @@ class Application:
                 master=item_frame, font=("TkDefaultFont", 12), width=105, height=50, wraplength=100, text=item['name']
             )
             label.pack(side=tk.BOTTOM, fill=tk.BOTH, padx=20, pady=20, anchor=tk.CENTER)
-            frame_data_mapping[item_frame] = item['id']  # Associate frame with data ID
+          
+            framedata = {
+                "id":item["id"],
+                "name":item["name"]
+            }
+            frame_data_mapping[item_frame] = framedata 
             img = None
             if(item["mimeType"] == "application/vnd.google-apps.spreadsheet"):
                 item_frame.bind("<Button-1>", self.click_frame)
@@ -178,12 +188,13 @@ class Application:
                 row_frame = customtkinter.CTkFrame(master=self.frame, border_width=0)
                 row_frame.pack(side=tk.TOP, fill=tk.BOTH,padx=0, pady=0, anchor=tk.W)
         self.frame_data_mapping = frame_data_mapping
+        self.frame_dataName_mapping = frame_dataName_mapping
         self.googleItemCollection.append(self.frame)
         
     def click_frame(self,event):
         clicked_frame = event.widget.master
-        str_value = self.frame_data_mapping.get(clicked_frame)  # Get the associated data from the mapping
-        print("Value associated with clicked frame:", str_value)
+        str_value = self.frame_data_mapping.get(clicked_frame) 
+        print(str_value)
         if event.widget.master.cget("fg_color") == "green":
             new_color = "#2B2B2B"  # Change the color back to black
             self.selectedFrames.remove(str_value)
@@ -198,6 +209,20 @@ class Application:
         self.folderStack.append(str_value)
         self.driveItems= self.drive.get_folder(str_value)
         self.createItemFrame(window=self.scrollFrameCollection[0],init=False)
+    def createScript(self):
+        print(self.selectedFrames)
+        dictionary = {
+            "items": self.selectedFrames,
+            "scriptPath": ["./backup/output.json"],
+            "path": ["./backup/"],
+            "nameExten": "backup",
+            "backupPeriod": "2400"
+        }
+        print(dictionary['items'])
+        json_object = json.dumps(dictionary, indent=4)
+        with open("scripts/sample.json", "w") as outfile:
+            outfile.write(json_object)
+        self.drive.document_automation(DOCUMENT_ID=dictionary['items'],FILE_PATH=dictionary['path'])
     def click_return(self,event):
         if self.folderStack:
           
@@ -209,6 +234,7 @@ class Application:
             self.driveItems=self.drive.get_files()
            self.createItemFrame(window=self.scrollFrameCollection[0],init=False)
         else:
+            print("space")
         
     def createScrollFrame(self,window=None,fill=tk.NONE,width=0,expand=False,height=0,border_width=0,fg_color=None,border_color=None,side=tk.TOP,padx=0,pady=0,anchor=tk.CENTER):
         frame = customtkinter.CTkScrollableFrame(master=window, width=width, height=height,border_width=border_width,fg_color=fg_color,border_color=border_color)
