@@ -34,7 +34,7 @@ class googleDrive:
         try:
             service = build('drive', 'v3', credentials=self.creds)
             results = service.files().list(
-                pageSize=100, 
+                pageSize=500, 
                 fields="nextPageToken, files(id, name, mimeType)").execute()
             items = results.get('files', [])
             if not items:

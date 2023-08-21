@@ -4,7 +4,6 @@ import tkinter as tk
 import customtkinter
 from PIL import Image
 from googleDrive import googleDrive 
-from framedata import framedata
 import threading
 import urllib.request
 class Application:
@@ -101,6 +100,8 @@ class Application:
             self.authentication_thread.start()
             self.check_authentication_status()     
         if windowName=="mainmenu":
+            self.clearAll()
+            self.selectedFrames.clear()
             self.createFrame(window=self.windowCollection[0],fill=tk.BOTH,border_width=2,side=tk.TOP,padx=10,pady=10,anchor=tk.N)
             self.createImageLabel(self.frameCollection[0],font=('TkDefaultFont',26),img=self.createImageUrl(self.driveInfo["user"]["photoLink"]),side=tk.RIGHT,padx=0,pady=0,anchor=tk.E)
             self.createLabel(self.frameCollection[0],font=('TkDefaultFont',26),wraplength=1000,text=f"Hello {self.driveInfo['user']['displayName']}",side=tk.TOP,padx=10,pady=10,anchor=tk.NW)
@@ -125,7 +126,7 @@ class Application:
                 self.createLabel(self.scrollFrameCollection[0],font=('TkDefaultFont',18),wraplength=1000,text=f"{x['name']}",side=tk.TOP,padx=10,pady=0,anchor=tk.NW)
 
             self.createFrame(window=self.windowCollection[0],fill=tk.BOTH,border_width=2,side=tk.BOTTOM,padx=10,pady=10,anchor=tk.S)
-            self.createButton(window=self.frameCollection[2],fg_color="white",text_color="black",hover_color="#F5ECEB",text="Back",side=tk.LEFT,padx=10,pady=10,anchor=tk.W,corner_radius=30)
+            self.createButton(window=self.frameCollection[2],fg_color="white",text_color="black",hover_color="#F5ECEB",text="Back",side=tk.LEFT,padx=10,pady=10,anchor=tk.W,command=lambda:self.populateWindow(windowName="mainmenu"),corner_radius=30)
             self.createButton(window=self.frameCollection[2],fg_color="white",text_color="black",hover_color="#F5ECEB",text="Create Script",side=tk.RIGHT,padx=10,pady=10,anchor=tk.E,command=self.createScript,corner_radius=30)
             
     def clearAll(self):
@@ -177,6 +178,7 @@ class Application:
             elif(item["mimeType"] == "application/vnd.google-apps.folder"):
                 item_frame.bind("<Button-1>", self.click_folder)
                 img = self.imageCollection[1]
+                
             else:
                 item_frame.bind("<Button-1>", self.click_frame)
                 img = self.imageCollection[2]
@@ -206,8 +208,9 @@ class Application:
         self.frame.destroy()
         clicked_frame = event.widget.master
         str_value = self.frame_data_mapping.get(clicked_frame) 
-        self.folderStack.append(str_value)
-        self.driveItems= self.drive.get_folder(str_value)
+        print(str_value["id"])
+        self.folderStack.append(str_value["id"])
+        self.driveItems= self.drive.get_folder(str_value["id"])
         self.createItemFrame(window=self.scrollFrameCollection[0],init=False)
     def createScript(self):
         print(self.selectedFrames)
